@@ -1,0 +1,43 @@
+<configuration>
+    <!-- 변수 지정 -->
+    <!--  
+    <property name="LOG_DIR" value="/home/vmms/log" />
+    -->
+     
+    <property name="LOG_DIR" value="D:/log" />
+    
+    <property name="LOG_PATH_NAME" value="${LOG_DIR}/psamGWS.log" />
+
+    <!-- FILE Appender -->
+    <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH_NAME}</file>
+        <!-- 일자별로 로그파일 적용하기 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH_NAME}.%d{yyyyMMdd}</fileNamePattern>
+            <maxHistory>30</maxHistory> <!-- 일자별 백업파일의 보관기간 -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5p] [%F]%M\(%L\) : %m%n</pattern>
+        </encoder>
+    </appender>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyyMMdd HH:mm:ss.SSS} [%thread] %-3level %logger{5} - %msg %n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="jdbc" level="OFF"/>
+  <logger name="jdbc.sqlonly" level="INFO"/>
+  <logger name="jdbc.sqltiming" level="OFF"/>
+  <logger name="jdbc.audit" level="OFF"/>
+  <logger name="jdbc.resultset" level="OFF"/>
+  <logger name="jdbc.resultsettable" level="OFF"/>
+  <logger name="jdbc.connection" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="ROLLING"/>
+  </root>
+
+</configuration>
