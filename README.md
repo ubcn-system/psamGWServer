@@ -1,0 +1,1 @@
+PSAM 서버 MARIADB 버전 
