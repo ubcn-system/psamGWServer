@@ -3,6 +3,8 @@ package com.ubcn.psam.common.packet;
 import java.nio.charset.Charset;
 
 import com.ubcn.psam.common.AbstractPersistentModel;
+import com.ubcn.psam.common.PSAMConstants;
+import com.ubcn.psam.common.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,6 +16,8 @@ public class PSAMRequest extends AbstractPersistentModel{
 	 */
 	private static final long serialVersionUID = 4792482397371088780L;
 	
+	public static final String FS="\034";
+	
 	public static final String SERVER_ID = "server_id";
 	public static final String TERM_ID = "term_id";
 	public static final String TRANS_TYPE = "trans_type";
@@ -24,6 +28,21 @@ public class PSAMRequest extends AbstractPersistentModel{
 	public static final String CRYPTO_FLAG = "encryption_flag";
 	public static final String RFU = "rfu";
 	
+	//MSGTYPE 01  인증코드키요청
+	public static final String vanCode ="van_code"; //VAN구분코드 : 4
+	public static final String samServNum = "sam_serv_num"; // SAM서버번호 2
+	public static final String samNum ="sam_num"; // SAM번호 2
+	public static final String CSN = "csn"; //Chip Serial Number 8
+	public static final String secNum = "sec_num"; // 섹터번호 2
+	//MSGTYPE 02 (코드검증&)카드번호키요청전문
+	//MSGTYPE 01  인증코드키요청
+	public static final String certiCode = "certi_code"; //보안인증 코드 : 32
+	//MSGTYPE 03  멀티SAM 인증서버 상태수집전문
+	//MSGTYPE 03  멀티SAM 인증서버 리스타트
+	//public static final String samServNum = "sam_serv_num"; // SAM서버번호 2
+			
+		
+	
 	public String getServerId() {
 		return (String) getAttribute("server_id");
 	}
@@ -31,7 +50,7 @@ public class PSAMRequest extends AbstractPersistentModel{
 	public void setServerId(String id) {
 		setAttribute("server_id", id);
 	}
-
+	
 	public String getTermId() {
 		return (String) getAttribute("term_id");
 	}
@@ -96,13 +115,118 @@ public class PSAMRequest extends AbstractPersistentModel{
 		setAttribute("rfu", rfu);
 	}
 	
+	public String getVanCode() {
+		return (String)getAttribute("van_code");
+	}
+	public void setVanCode(String vanCode) {
+		setAttribute("van_code",vanCode);
+	}
 	
+	public String getSamServNum() {
+		return (String)getAttribute("sam_serv_num");
+	}
+	public void setSamServNum(String samServNum) {
+		setAttribute("sam_serv_num",samServNum);
+	}
+	
+	public String getSamNum() {
+		return (String)getAttribute("sam_num");
+	}
+	public void setSamNum(String samNum) {
+		setAttribute("sam_num",samNum);
+	}
+	
+	public String getCsn() {
+		return (String)getAttribute("csn");
+	}
+	public void setCsn(String csn) {
+		setAttribute("csn",csn);
+	}
+	
+	public String getSecNum() {
+		return (String)getAttribute("sec_num");
+	}
+	public void setSecNum(String secNum) {
+		setAttribute("sec_num",secNum);
+	}
+	
+	public String getCertiCode() {
+		return (String)getAttribute("certi_code");
+	}
+	public void setCertiCode(String certiCode) {
+		setAttribute("certi_code",certiCode);
+	}
 	
 
 	public static PSAMRequest fromMessage(String serverId,byte message[], Charset charset) {
 		PSAMRequest request = new PSAMRequest();
 		
+		try {
+			request.setServerId(serverId);
+			request.setTermId(new String(message, 0, 10, charset));
+			request.setTransType(new String(message, 10, 2, charset));
+			request.setMessageType(new String(message, 12, 2, charset));
+			request.setInputType(new String(message, 14, 1, charset));
+			request.setTermTransNo(new String(message, 15, 5, charset));
+			request.setMessageVersion(new String(message, 20, 2, charset));
+			request.setCryptoFlag(new String(message, 22, 1, charset));
+			request.setRfu((new String(message, 23, 10, charset)).trim());
+			
+			String fields[] = (new String(message,34, message.length - 34,charset)).split(FS);
+			String msgData = new String(message,0,message.length,charset);
+			log.info("전문:{}",msgData);
+			
+			if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(request.getMessageType())) {  //인즈코드키 요청
+				request.setVanCode(fields[0]);
+				request.setSamServNum(fields[1]);
+				request.setSamNum(fields[2]);
+				request.setCsn(fields[3]);
+				request.setSecNum(fields[4]);
+			}else if(PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(request.getMessageType())) { //. (코드검증&)카드번호키요청
+				request.setVanCode(fields[0]);
+				request.setSamServNum(fields[1]);
+				request.setSamNum(fields[2]);
+				request.setCsn(fields[3]);
+				request.setSecNum(fields[4]);
+				request.setCertiCode(fields[5]);
+			}else if(PSAMConstants.MESSAGE_TYPE_RESET.equals(request.getMessageType())) { //멀티SAM 인증서버 SAM 리셋전문	
+				request.setSamServNum(fields[0]);
+				request.setSamNum(fields[1]);
+			}else {
+				//psamConstants.MESSAGE_TYPE_STATUS.equals(request.getMessageType()))  // 멀티SAM 인증서버 상태수집전문
+				//psamConstants.MESSAGE_TYPE_RESTART.equals(request.getMessageType())) // 멀티SAM 인증서버 리스타트전문
+				request.setSamServNum(fields[0]);
+			}
+			
+		}catch(Exception ex) {
+			StringUtils.getPrintStackTrace(ex);
+		}
 		
 		return request;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("PSAMRequest [");
+		sb.append("TremID="+getTermId()+",");
+		sb.append("TransType="+getTransType()+",");
+		sb.append("MessageType="+getMessageType()+",");
+		sb.append("InputType="+getInputType()+",");
+		sb.append("TermTransNo="+getTermTransNo()+",");
+		sb.append("MessageVersion="+getMessageVersion()+",");
+		sb.append("CryptoFlag="+getCryptoFlag()+",");
+		sb.append("VanCode="+getVanCode()+",");
+		sb.append("SamServNum="+getSamServNum()+",");
+		sb.append("SamNum="+getSamNum()+",");
+		sb.append("Csn="+getCsn()+",");
+		sb.append("SecNum="+getSecNum()+",");
+		sb.append("CertiCode="+getCertiCode()+",");
+		sb.append("]");
+		
+		return sb.toString();  
+	}
+	
+	
+	
 }

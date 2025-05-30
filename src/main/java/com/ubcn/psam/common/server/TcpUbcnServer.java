@@ -5,12 +5,16 @@ import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 
 import com.ubcn.psam.codec.PSAMMessageCodec;
 import com.ubcn.psam.common.AbstractService;
 import com.ubcn.psam.common.util.ArgumentUtils;
+import com.ubcn.psam.handler.psamAuthHandler;
+import com.ubcn.psam.service.DBService;
+import com.ubcn.psam.service.PropService;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -38,6 +42,12 @@ public abstract class TcpUbcnServer extends AbstractService implements UbcnServe
 	
 	public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 20; //VAN 연결후 응답 시간 timeout
 	public static final int DEFAULT_WAIT_TIMEOUT_SECONDS = 60;
+	
+	@Autowired 
+	public DBService dbService;
+	@Autowired
+	public PropService propService;
+	
 	
 	@Value("${spring.netty.serverId}")
 	private String serverId;
@@ -254,7 +264,7 @@ public abstract class TcpUbcnServer extends AbstractService implements UbcnServe
 						pipeline.addLast("control", new ClientChannelHandler(idleTimeoutSeconds));
 						pipeline.addLast(new PSAMMessageCodec(serverId,encodingCharset));
 						
-						pipeline.addLast(null);
+						pipeline.addLast(new psamAuthHandler(dbService,propService));
 						
 						
 					}
