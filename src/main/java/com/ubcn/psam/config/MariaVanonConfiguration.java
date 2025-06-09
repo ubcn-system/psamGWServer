@@ -42,7 +42,7 @@ public class MariaVanonConfiguration {
 	SqlSessionFactory SqlSessionFactory(@Qualifier("DataSource") DataSource dataSource) throws Exception {
 		SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
 		sqlSessionFactoryBean.setDataSource(dataSource);
-		sqlSessionFactoryBean.setMapperLocations(applicationContext.getResources("file:/mapper/maria/*.xml"));
+		sqlSessionFactoryBean.setMapperLocations(applicationContext.getResources("file:config/mapper/maria/*.xml"));
 		return sqlSessionFactoryBean.getObject();
 	}
 

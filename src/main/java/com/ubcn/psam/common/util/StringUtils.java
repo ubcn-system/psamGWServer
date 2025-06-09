@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -738,9 +739,19 @@ public class StringUtils {
 			log.error(getPrintStackTrace(ex));
 		}catch(Exception ex) {
 			log.error(getPrintStackTrace(ex));
-		}
-		
+		}		
 	 }
+	 
+	 
+	 public static int RandNum(int i) {
+		 Random rand = new Random();
+				 
+		 int iRand = rand.nextInt(i);
+		 
+		 return iRand;
+	 }
+	 
+	 
 	 
 	 public static void main(String[] args) {
 		 
@@ -807,7 +818,12 @@ public class StringUtils {
 		 
 		 //System.out.println(emvData("M051000010505000010009F5B0000000000000000000000000000000000000000009F260879474A09235D0CB59F2701809F10125210A00005220000000000000000000000FF00000000000000000000000000009F370427698EC39F36020117950500000080009A032406309C01009F02060000000010005F2A020410820218009F1A0204109F03060000000000009F34031F03029F3303E0F8C89F3501229F1E0849463030303030309F5301008407A00000000410100000000000000000009F090200029F4104000000019F6E000000000000"));
 		 
-		 System.out.println(Long.valueOf("-00002400"));
+		 //System.out.println(Long.valueOf("-00002400"));
+		 
+		 System.out.println(RandNum(5));
+		 System.out.println(RandNum(5));
+		 System.out.println(RandNum(5));
+		 System.out.println(RandNum(5));
 	 }
 
 }

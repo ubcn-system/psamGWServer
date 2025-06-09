@@ -1,7 +1,19 @@
 package com.ubcn.psam.mapper.maria;
 
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ubcn.psam.model.PSamServer;
+
+@Mapper
 public interface MariaMapper {
 	
-	public int test();
-
+	public PSamServer selectPSAMserv(Map<String,Object> param);
+	
+	public String GenerateUniqueNo(String serverNum);
+	
+	public int insert_PSAM_TRANINFO(Map<String,Object> param);
+	
+	public int update_PSAM_TRANINFO(Map<String,Object> param);
 }

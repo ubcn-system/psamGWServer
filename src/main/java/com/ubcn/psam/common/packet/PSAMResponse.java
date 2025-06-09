@@ -260,19 +260,29 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 			setReplyMessage(trans.getReplyMessage());
 			
 			if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(trans.getMessageType())) {  //인즈코드키 요청
+								
 				setVanCode(trans.getVanCode());
 				setSamServNum(trans.getSamServNum());			
 				setSamNum(trans.getSamNum());
 				setCsn(trans.getCsn());
 				setSecNum(trans.getSecNum());
+				
+				if(trans.getCertiCode()==null) {
+					trans.setCertiCode("");
+				}//				
 				setCertiCode(trans.getCertiCode());
 				
 			}else if(PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(trans.getMessageType())) {  // (코드검증&)카드번호키요청
+				
 				setVanCode(trans.getVanCode());
 				setSamServNum(trans.getSamServNum());			
 				setSamNum(trans.getSamNum());
 				setCsn(trans.getCsn());
-				setSecNum(trans.getSecNum());				
+				setSecNum(trans.getSecNum());
+				
+				if(trans.getCardNumKey()==null) {
+					trans.setCardNumKey("");
+				}//				
 				setCardNumKey(trans.getCardNumKey());
 					
 			}else if(PSAMConstants.MESSAGE_TYPE_STATUS.equals(trans.getMessageType())) { //멀티SAM 인증서버 상태수집전문
@@ -296,6 +306,7 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 	public byte[] toMessage(Charset charset) {
 		StringBuilder sb = new StringBuilder();
 		
+		
 		sb.append(StringUtils.adjustByteCount(getTermId(), 10, 'X', charset))
 		  .append(StringUtils.adjustByteCount(getTransType(), 2, 'X', charset))
 		  .append(StringUtils.adjustByteCount(getMessageType(), 2, 'X', charset))
@@ -311,9 +322,10 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 			sb.append(getSamNum()).append(FS);
 			sb.append(getCsn()).append(FS);
 			sb.append(getSecNum()).append(FS);
-			sb.append(getCertiCode()).append(FS);
+			sb.append(StringUtils.rpadB(getCertiCode(),' ',12)).append(FS);
 			sb.append(getReplyCode()).append(FS);			
 			sb.append(StringUtils.rpadB(StringUtils.substringByBytes((String) ObjectUtils.nullValue(getReplyMessage(), "잠시 후 재조회 요망(5110)"),1,32),' ',32));
+			
 		}else if(PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(getMessageType())) {  // (코드검증&)카드번호키요청
 			sb.append(getVanCode()).append(FS);
 			sb.append(getSamServNum()).append(FS);			
@@ -322,7 +334,9 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 			sb.append(getSecNum()).append(FS);
 			sb.append(getCardNumKey()).append(FS);
 			sb.append(getReplyCode()).append(FS);			
-			sb.append(StringUtils.rpadB(StringUtils.substringByBytes((String) ObjectUtils.nullValue(getReplyMessage(), "잠시 후 재조회 요망(5110)"),1,32),' ',32));	
+			sb.append(StringUtils.rpadB(StringUtils.substringByBytes((String) ObjectUtils.nullValue(getReplyMessage(), "잠시 후 재조회 요망(5110)"),1,32),' ',32));
+			
+			
 		}else if(PSAMConstants.MESSAGE_TYPE_STATUS.equals(getMessageType())) { //멀티SAM 인증서버 상태수집전문
 			sb.append(getSamServNum()).append(FS);
 			sb.append(getTotalSam()).append(FS);
@@ -345,7 +359,7 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 		
 		log.info("응답:{}",sb.toString());
 		
-		return sb.toString().getBytes();
+		return sb.toString().getBytes(charset);
 	}
 	
 	@Override
@@ -368,7 +382,7 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 		sb.append("SecNum="+getSecNum()+",");
 		sb.append("CertiCode="+getCertiCode()+",");
 		sb.append("ReplyCode="+getReplyCode()+",");			
-		sb.append("ReplyMessage"+getReplyMessage()+",");
+		sb.append("ReplyMessage="+getReplyMessage()+",");
 		
 		if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(getMessageType())) {  //인즈코드키 요청
 			sb.append("SamServNum="+getSamServNum()+",");			

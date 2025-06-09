@@ -156,7 +156,6 @@ public class PSAMRequest extends AbstractPersistentModel{
 	public void setCertiCode(String certiCode) {
 		setAttribute("certi_code",certiCode);
 	}
-	
 
 	public static PSAMRequest fromMessage(String serverId,byte message[], Charset charset) {
 		PSAMRequest request = new PSAMRequest();
@@ -204,6 +203,76 @@ public class PSAMRequest extends AbstractPersistentModel{
 		
 		return request;
 	}
+	
+	public PSAMRequest() {
+		
+	}
+	
+	public PSAMRequest(PSAMTransData transData) {
+		setServerId(transData.getServerId());
+		setTermId(transData.getTermId());
+		setTransType(transData.getTransType());
+		setMessageType(transData.getMessageType());
+		setInputType(transData.getInputType());
+		setTermTransNo(transData.getTermTransNo());
+		setMessageVersion(transData.getMessageVersion());
+		setCryptoFlag(transData.getCryptoFlag());
+		
+		setVanCode(transData.getVanCode());
+		setSamServNum(transData.getSamServNum());
+		setSamNum(transData.getSamNum());
+		setCsn(transData.getCsn());
+		setSecNum(transData.getSecNum());		
+		setCertiCode(transData.getCertiCode());
+	}
+	
+	public byte[] toMessage() {
+		return toMessage(StringUtils.EUC_KR);
+	}
+	
+	
+	public byte[] toMessage(Charset charset) {
+		StringBuilder sb = new StringBuilder();
+		
+		try {
+			sb.append(getTermId());
+			sb.append(getTransType());
+			sb.append(getMessageType());
+			sb.append(getInputType());
+			sb.append(getTermTransNo());
+			sb.append(getMessageVersion());
+			sb.append(getCryptoFlag());
+			sb.append(getRfu());
+			sb.append(FS);
+			if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(getMessageType())) {  //인즈코드키 요청
+				sb.append(getVanCode()).append(FS);
+				sb.append(getSamServNum()).append(FS);
+				sb.append(getSamNum()).append(FS);
+				sb.append(getCsn()).append(FS);
+				sb.append(getSecNum());
+			}else if(PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(getMessageType())) { //. (코드검증&)카드번호키요청
+				sb.append(getVanCode()).append(FS);
+				sb.append(getSamServNum()).append(FS);
+				sb.append(getSamNum()).append(FS);
+				sb.append(getCsn()).append(FS);
+				sb.append(getSecNum()).append(FS);
+				sb.append(getCertiCode());
+			}else if(PSAMConstants.MESSAGE_TYPE_RESET.equals(getMessageType())) { //멀티SAM 인증서버 SAM 리셋전문	
+				sb.append(getSamServNum()).append(FS);
+				sb.append(getSamNum());
+			}else {
+				//psamConstants.MESSAGE_TYPE_STATUS.equals(request.getMessageType()))  // 멀티SAM 인증서버 상태수집전문
+				//psamConstants.MESSAGE_TYPE_RESTART.equals(request.getMessageType())) // 멀티SAM 인증서버 리스타트전문
+				sb.append(getSamServNum());
+			}//			
+		}catch(Exception ex) {
+			StringUtils.getPrintStackTrace(ex);
+		}
+		
+		return sb.toString().getBytes(charset);
+	}
+	
+	
 	
 	@Override
 	public String toString() {

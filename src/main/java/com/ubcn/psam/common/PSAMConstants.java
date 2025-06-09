@@ -19,5 +19,9 @@ public class PSAMConstants {
 	public static final String MESSAGE_TYPE_STATUS		= "03";
 	public static final String MESSAGE_TYPE_RESTART		= "04";
 	public static final String MESSAGE_TYPE_RESET		= "05";
+	
+	public static final int ClientTimoutSecond = 10; //10초  //ISJUNG
+	
+	public static final String rtn_code_success = "0000"; 
 
 }

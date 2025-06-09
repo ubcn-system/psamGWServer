@@ -7,10 +7,11 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 import com.ubcn.psam.common.packet.PSAMResponse;
-import com.ubcn.psam.common.util.DateUtils;
+import com.ubcn.psam.common.packet.PSAMTransData;
 
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -19,6 +20,9 @@ public class psamHandlerAdapter extends ChannelDuplexHandler implements Initiali
 	
 	private String handlerID;
 	private Charset encodingCharset;
+	
+	protected static final AttributeKey<PSAMTransData> PSAMTrans = AttributeKey.newInstance("transData");
+	
 	
 	public psamHandlerAdapter() {
 		handlerID = "psamHandler";
