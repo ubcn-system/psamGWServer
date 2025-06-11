@@ -399,7 +399,7 @@ public class PSAMResponse extends AbstractPersistentModel {/**
 			sb.append(getSamNum()).append(FS);
 			sb.append(getCsn()).append(FS);
 			sb.append(getSecNum()).append(FS);
-			sb.append(getCardNumKey()).append(FS);
+			sb.append(StringUtils.rpadB(getCardNumKey(),' ',12)).append(FS);
 			sb.append(getReplyCode()).append(FS);			
 			sb.append(StringUtils.rpadB(StringUtils.substringByBytes((String) ObjectUtils.nullValue(getReplyMessage(), "잠시 후 재조회 요망(5110)"),1,32),' ',32));
 			

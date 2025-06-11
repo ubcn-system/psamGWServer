@@ -15,6 +15,7 @@ import com.ubcn.psam.common.PSAMConstants;
 import com.ubcn.psam.common.packet.PSAMRequest;
 import com.ubcn.psam.common.packet.PSAMResponse;
 import com.ubcn.psam.common.packet.PSAMTransData;
+import com.ubcn.psam.common.util.DateUtils2;
 import com.ubcn.psam.common.util.StringUtils;
 import com.ubcn.psam.model.PSamServer;
 import com.ubcn.psam.service.DBService;
@@ -57,12 +58,19 @@ public class psamStateSchedule {
 	@Value("${spring.PSAM.state.terminalid}")
 	private String stateTerminalid;
 	
+	@Value("${spring.PSAM.state.YN}")
+	private String pSamStateYN;
+	
 	private NioEventLoopGroup workerGroup;
 	
 	public void jobStart() {
+		 if(!"Y".equals(pSamStateYN)) {
+			 log.info("PSAM 서버 체크 사용안함 -------------------------");
+			 return;
+		 }
 		 workerGroup = new NioEventLoopGroup(workerCount);
 		
-		 log.info("PAM 서버 체크 시작-----------");
+		 log.info("{} PAM 서버 체크 시작-----------",DateUtils2.getTodayTime());
 		 List<PSamServer> pList = dbService.selectPSAMservList();
 		 PSamServer pSamInfo=null;
 		 
@@ -83,7 +91,7 @@ public class psamStateSchedule {
 				log.error(StringUtils.getPrintStackTrace(e));
 			 }
 		 }//
-		 log.info("PAM 서버 체크 마침-----------");
+		 log.info("{} PAM 서버 체크 마침-----------",DateUtils2.getTodayTime());
 	}
 	
 	private void checkServer(int serverNo, String serverIP, int serverPort) {
