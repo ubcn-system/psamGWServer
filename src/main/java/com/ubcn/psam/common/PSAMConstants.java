@@ -22,6 +22,7 @@ public class PSAMConstants {
 	
 	public static final int ClientTimoutSecond = 10; //10초  //ISJUNG
 	
+	public static final String rtn_code_totalerror = "9999";
 	public static final String rtn_code_success = "0000"; 
 
 }

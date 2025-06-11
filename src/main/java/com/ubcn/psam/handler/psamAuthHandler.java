@@ -44,8 +44,6 @@ public class psamAuthHandler extends psamHandlerAdapter {
 	
 	private PSAMRequest request;
 	private PSAMResponse response;
-	//private String pSAMServerIP="";
-	//private int pSAMServerPort=0;
 	
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		
@@ -86,24 +84,32 @@ public class psamAuthHandler extends psamHandlerAdapter {
 				return;
 			}
 		}
-		
 		clientChannel.attr(PSAMTrans).set(transData);  //수신 데이타 저장
 		
-		//SAM 서버 찾기 
-		int serverNum = this.rtnServerNum(propService.getServerNum(), propService.getPsamNum());
-		PSamServer psamServ = dbService.select_PSAM_server(serverNum+1);
+		int serverNum = 0;
+		if("01".equals(request.getMessageType()) || "02".equals(request.getMessageType()) ) {  //01 : 인증코드키 요청, 02 :  카드번호키 요청
+			//SAM 서버 찾기 
+			serverNum = this.rtnServerNum(propService.getServerNum(), propService.getPsamServNum())+1;  // 0~ propService.getPsamNum() 까지의 숫자 랜덤
+		}else {
+			serverNum =  Integer.parseInt(request.getSamServNum());  //요청 서버 번호
+			transData.setSamNum(propService.getPsamNum());  // Default PSAM 번호
+		}
 		
-		log.info("{}:{}:{}",serverNum,psamServ.getSERV_IP(),psamServ.getBAD_SAM());
+		PSamServer psamServ = dbService.select_PSAM_server(serverNum);
+		
+		log.info("serverNum:{}:{}:{}",serverNum,psamServ.getSERV_IP(),psamServ.getBAD_SAM());
 		
 		transData.setTotalSam(Integer.toString(psamServ.getTOTL_SAM()));
 		transData.setIdleSam(Integer.toString(psamServ.getIDLE_SAM()));
 		transData.setBusySam(Integer.toString(psamServ.getBUSY_SAM()));
-		transData.setBadSam(Integer.toString(psamServ.getBAD_SAM()));
+		transData.setBadSam(Integer.toString(psamServ.getBAD_SAM())); 
+				
+		
 		
 		//1. 요청 정보 저장 
 		transData.setReplyCode("9999");
 		retCode = dbService.insert_PSAM_TRANINFO(transData);
-		
+//		retCode=1;  //테스트 코드
 		if(retCode!=1) {
 			transData.setReplyCode("7001");
 			transData.setReplyMessage("요청 데이타 저장오류");
@@ -112,6 +118,11 @@ public class psamAuthHandler extends psamHandlerAdapter {
 			
 			return;
 		}
+		
+//		transData.setReplyCode("0000");  //테스트 코드
+//		transData.setReplyMessage("정상응답");
+//		response = new PSAMResponse(transData);		
+//		ctx.writeAndFlush(response);
 		
 		sendTcpRequest(clientChannel, transData,psamServ.getSERV_IP(),psamServ.getSERV_PORT());
 		
@@ -135,7 +146,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		}else {
 			if(preSerevrNum.equals(String.valueOf(rtnServerNum))) {
 				for(i=0;i<5;i++) {
-					rtnServerNum= StringUtils.RandNum(5);
+					rtnServerNum= StringUtils.RandNum(serverNum);
 					log.info("서버번호 다시 찾기:{}",rtnServerNum);
 					if(!preSerevrNum.equals(String.valueOf(rtnServerNum))) {
 						break;
@@ -198,10 +209,12 @@ public class psamAuthHandler extends psamHandlerAdapter {
 												if (log.isDebugEnabled()) {
 													log.debug((new StringBuilder()).append("[")
 															.append(transData.getTermId())
-															.append("][CPSAM 핸들러]] ").append("TcpResponse")
+															.append("][PSAM 핸들러]] ").append("TcpResponse")
 															.append(" = [").append(msg.toString()).append("]")
 															.toString());
 												}//
+												
+												log.info("응답:{}",msg.toString());
 												
 												processTcpResponse(clientChannel, (PSAMResponse) msg, transData);
 												hasResponse = true;
@@ -278,15 +291,22 @@ public class psamAuthHandler extends psamHandlerAdapter {
 	protected void processTcpResponse(Channel clientChannel, PSAMResponse pSAMResponse, PSAMTransData transData) 
 			throws Exception {
 		int rtnCode = 0;
+		
+		 PSAMResponse rtnPSAMResponse = null;
+		
 		// 응답 처리
 		if ((pSAMResponse == null) && (transData.getReplyCode() == null)) {
 			transData.setReplyCode("7005");
 			transData.setReplyMessage("잠시 후 재시도 요망");
+		}else {
+			log.info("단말기응답:{}",pSAMResponse.toString());
+			
+			transData.setReplyCode(pSAMResponse.getReplyCode());
+			transData.setReplyMessage(pSAMResponse.getReplyMessage());
 		}
 		
 		//
-		rtnCode = dbService.update_PSAM_TRANINFO(transData);
-		
+		rtnCode = dbService.update_PSAM_TRANINFO(transData);		
 		//log.info(clientChannel.attr(PSAMTrans).get().getTermId());
 		
 		

@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class PSamServer {
 
+	public int SERV_NUM;
 	public String SERV_IP; //`   VARCHAR(15) NOT NULL COMMENT '서버IP	', -- 서버IP
 	public int SERV_PORT;  //` INT         NOT NULL DEFAULT 0 COMMENT '서버포트', -- 서버포트
 	public int ADM_PORT;   //`  INT         NOT NULL DEFAULT 0 COMMENT '관리자포트', -- 관리자포트

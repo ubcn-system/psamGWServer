@@ -198,7 +198,7 @@ public class PSAMRequest extends AbstractPersistentModel{
 			}
 			
 		}catch(Exception ex) {
-			StringUtils.getPrintStackTrace(ex);
+			log.error(StringUtils.getPrintStackTrace(ex));
 		}
 		
 		return request;
@@ -217,7 +217,7 @@ public class PSAMRequest extends AbstractPersistentModel{
 		setTermTransNo(transData.getTermTransNo());
 		setMessageVersion(transData.getMessageVersion());
 		setCryptoFlag(transData.getCryptoFlag());
-		
+		setRfu(String.format("%10s", " "));
 		setVanCode(transData.getVanCode());
 		setSamServNum(transData.getSamServNum());
 		setSamNum(transData.getSamNum());
@@ -266,8 +266,12 @@ public class PSAMRequest extends AbstractPersistentModel{
 				sb.append(getSamServNum());
 			}//			
 		}catch(Exception ex) {
-			StringUtils.getPrintStackTrace(ex);
+			log.error(StringUtils.getPrintStackTrace(ex));
 		}
+		
+		
+		log.info("서버요청전문:{}",sb.toString());
+		
 		
 		return sb.toString().getBytes(charset);
 	}

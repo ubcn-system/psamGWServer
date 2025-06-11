@@ -1,6 +1,7 @@
 package com.ubcn.psam.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,23 @@ public class DBService {
 		
 		return psamServ;
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public List<PSamServer> selectPSAMservList() {
+		List<PSamServer> pList = null;
+		
+		try {			
+			pList = mariadb.selectPSAMservList();			
+		}catch(Exception ex) {
+			log.error(StringUtils.getPrintStackTrace(ex));			
+		}
+		
+		return pList;		
+	}
+	
 	
 	/**
 	 * 
@@ -130,10 +148,10 @@ public class DBService {
 			
 			map.put("serv_num",transData.getSamServNum());
 			map.put("sam_num",transData.getSamNum());
-			map.put("totl_sam",transData.getTotalSam());
-			map.put("busy_sam", transData.getBusySam());
-            map.put("idle_sam",transData.getIdleSam());            
-            map.put("bad_sam",transData.getBadSam());
+			map.put("totl_sam",Integer.parseInt(transData.getTotalSam()));
+			map.put("busy_sam",Integer.parseInt(transData.getBusySam()));
+            map.put("idle_sam",Integer.parseInt(transData.getIdleSam()));            
+            map.put("bad_sam",Integer.parseInt(transData.getBadSam()));
             
 			map.put("cert_code",transData.getCertiCode());
 			map.put("sect_no",transData.getSecNum());
@@ -151,6 +169,49 @@ public class DBService {
 			log.error(StringUtils.getPrintStackTrace(ex));			
 		}//		
 		return rtnCode;		
+	}
+	
+	
+	private int update_PSAM_SERVER(PSAMTransData  transData) {
+		int rtnCode = 0;
+		Map<String,Object> map = new HashMap<>();
+		try {
+			
+			map.put("totl_sam",Integer.parseInt(transData.getTotalSam()));
+			map.put("busy_sam",Integer.parseInt(transData.getBusySam()));
+            map.put("idle_sam",Integer.parseInt(transData.getIdleSam()));            
+            map.put("bad_sam",Integer.parseInt(transData.getBadSam()));
+            map.put("serv_num",Integer.parseInt(transData.getPSamServNum()));
+			
+			rtnCode = mariadb.update_PSAM_SERVER(map);
+			
+		}catch(Exception ex) {
+			log.error(StringUtils.getPrintStackTrace(ex));			
+		}
+		
+		return rtnCode;
+	}
+	
+
+	/**
+	 * 
+	 * @param transData
+	 * @return
+	 */
+	public int PSAM_SERVER_UPDATE(PSAMTransData  transData) {
+		int retCode = 0;
+		try {
+			
+			retCode = this.update_PSAM_TRANINFO(transData);
+			if(retCode==1) {
+				retCode = this.update_PSAM_SERVER(transData);
+			}//
+			
+		}catch(Exception ex) {
+			log.error(StringUtils.getPrintStackTrace(ex));			
+		}
+		
+		return retCode;
 	}
 	
 	

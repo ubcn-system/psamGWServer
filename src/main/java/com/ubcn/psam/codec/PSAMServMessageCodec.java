@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.ubcn.psam.common.packet.PSAMRequest;
+import com.ubcn.psam.common.packet.PSAMResponse;
 import com.ubcn.psam.common.util.CRCCheck;
 import com.ubcn.psam.common.util.StringUtils;
 
@@ -30,155 +31,129 @@ public class PSAMServMessageCodec extends ByteToMessageCodec<PSAMRequest>{
 	
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		// TODO Auto-generated method stub
-		try {
+		//stx 체크여부
+			boolean stxCheck = false;
+			//전문길이 문자열
+			String slength ="";
+			//전문길이
+			int length = 0;
+			//readerIndex
+			int index = 0;
 
-			if (log.isDebugEnabled()) {
-				log.debug("[" + serverId + "][PSAM 전문 코덱] decode : 수신\n\tchannel = " + ctx.channel()
-						+ "\n\tgarbage = [" + in.readableBytes() + "][" + ByteBufUtil.hexDump(in) + "]");
-			}
-
-
-			if (!in.isReadable()) {
-				if (log.isWarnEnabled()) {
-					log.warn("[" + serverId + "][PSAM 전문 코덱] decode : 경고 - 수신 데이터 없음\n\tchannel = " + ctx.channel());
-				}
-
-				return;
-			}
-
-			while (in.isReadable()) {
-				int index = in.indexOf(in.readerIndex(), in.writerIndex(), (byte) 2);
-
-
-				if (index < 0) {
-
-						log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> STX1 가 없음\n\tchannel = "
-								+ ctx.channel() + "\n\tgarbage = [" + in.readableBytes() + "]["
-								+ ByteBufUtil.hexDump(in) + "]");
-
-					in.readerIndex(in.writerIndex());
-					break;
-				}
-
-				if (index > in.readerIndex()) {
-
-						log.warn("[" + serverId + "][PSAM 전문 코덱] decode : <경고> STX 이전 데이터 제거\n\tchannel = "
-								+ ctx.channel() + "\n\tgarbage = [" + (index - in.readerIndex()) + "]["
-								+ ByteBufUtil.hexDump(in, in.readerIndex(), index - in.readerIndex()) + "]");
-
-					in.readerIndex(index);
-				}
-
-				index = in.indexOf(in.readerIndex() + 1, in.writerIndex(), (byte) 3);
-
-				if (index < 0) {
-
-
-					log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> ETX 없음  \n\tchannel = "
-							+ ctx.channel() + "\n\tgarbage = [" + (in.writerIndex()) + "]["
-							+ ByteBufUtil.hexDump(in, in.readerIndex(), in.writerIndex() ) + "]");
-
-
-					index = in.indexOf(in.readerIndex() + 1, in.writerIndex(), (byte) 2);
-
-
-					if (index > in.readerIndex()) {
-
-							log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> STX 이전 데이터 제거\n\tchannel = "
-									+ ctx.channel() + "\n\tgarbage = [" + (index - in.readerIndex()) + "]["
-									+ ByteBufUtil.hexDump(in, in.readerIndex(), index - in.readerIndex()) + "]");
-
-
-						in.readerIndex(index);
-
-					} else {
-
-						if (in.readableBytes() <= 10009)
-							break;
-
-
-						log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> 너무 긴 전문\n\tchannel = "
-									+ ctx.channel() + "\n\tgarbage = [" + in.readableBytes() + "]["
-									+ ByteBufUtil.hexDump(in) + "]");
-
-						in.readerIndex(in.writerIndex());
-						break;
+			try {
+				
+				if (!in.isReadable()) {
+					if (log.isWarnEnabled()) {
+						log.info("[" + serverId + "][PSAM 전문 코덱] decode : 경고 - 수신 데이터 없음\n\tchannel = " + ctx.channel());
 					}
+					return;
+				}
+				while (in.isReadable()) {
+					
+					if(!stxCheck) {
+						//STX 체크
+						index = in.indexOf(in.readerIndex(), in.writerIndex(), (byte) 2);
+						
+						log.debug("STX {}",index); //isjung
 
-				} else {
+						//STX가 없으면
+						if (index < 0) {
 
-					ByteBuf frame = in.readSlice(index - in.readerIndex() + 1);
+							if (log.isErrorEnabled()) {
+								log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> STX1 가 없음\n\tchannel = "
+										+ ctx.channel() + "\n\tgarbage = [" + in.readableBytes() + "]["
+										+ ByteBufUtil.hexDump(in) + "]");
+							}
 
-					if (frame.readableBytes() < 6) {
+							in.readerIndex(in.writerIndex());
+						}
 
-							log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> 너무 짧은 전문\n\tchannel = "
-									+ ctx.channel() + "\n\tframe = [" + frame.readableBytes() + "]["
-									+ ByteBufUtil.hexDump(frame) + "]");
+						//STX가 중간에 있으면
+						if (index > in.readerIndex()) {
+							if (log.isWarnEnabled()) {
+								log.warn("[" + serverId + "][VAN 전문 코덱] decode : <경고> STX 이전 데이터 제거\n\tchannel = "
+										+ ctx.channel() + "\n\tgarbage = [" + (index - in.readerIndex()) + "]["
+										+ ByteBufUtil.hexDump(in, in.readerIndex(), index - in.readerIndex()) + "]");
+							}
 
-						out.add(null);
+							//readerindex 위치를 STX 위치로 이동
+							in.readerIndex(index);
+						}
 
-					} else {
-
+						stxCheck = true;
+						
+						//STX 부터  전문길이 까지 버퍼 생성
+						ByteBuf frame = in.readSlice(5);
+						//STX 1바이트 스킵
 						frame.skipBytes(1);
+						//길이 4바이트 일기
+						slength = frame.readCharSequence(4, encodingCharset).toString();
 
-						String slength = frame.readCharSequence(4, encodingCharset).toString();
-
-						if (!StringUtils.isInteger(slength)) {
-
-
+						//길이 4바이트가 숫자인지 체크
+						if (!StringUtils.isNumeric(slength)) {
+							if (log.isErrorEnabled()) {
 								log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> 전문길이 불일치1 \n\tchannel = "
 										+ ctx.channel() + "\n\tinput = [" + frame.readableBytes() + "]["
 										+ frame.toString(encodingCharset) + "]");
-
-							ctx.channel().close();
-						}else {
-
-							int length = Integer.parseInt(slength);
-
-							if (length != frame.readableBytes()) {
-
-									log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> 전문길이 불일치2\n\tchannel = "
-											+ ctx.channel() + "\n\tlength = " + length + "\n\tinput = ["
-											+ frame.readableBytes() + "][" + frame.toString(encodingCharset) + "]");
-
-
-								ctx.channel().close();
-
-							} else {
-
-								byte[] message = new byte[length - 1];
-								frame.readBytes(message);
-
-
-								log.info("[" + serverId + "][PSAM 수신] \n\tchannel = [ = " + ctx.channel() + " [" + length + "]["
-										+ new String(message, encodingCharset) + "]");
-
-								PSAMRequest request = PSAMRequest.fromMessage(serverId, message, encodingCharset);
-
-							 	log.info("channel = [" + ctx.channel()+"]"	+ "\n\t 단말 수신 = " + request.toString());
-
-								out.add(request);
-								
-								Arrays.fill(message, (byte)0); //메모리 삭제
 							}
+							ctx.channel().close();
 						}
 
+						length = Integer.parseInt(slength);
+
+						//전문길이까지 인덱스 이동
+						in.readerIndex(5);
+						
+						frame.clear(); //메모리 삭제 					
 					}
 					
-					frame.clear();  //메모리 삭제
-				}
-			} //while
-			
-		} catch (Exception ex) {
-			if (log.isErrorEnabled()) {
-				log.error("[" + serverId + "][PSAM 전문 코덱] decode : <오류> " + ex.getMessage() + "\n\tchannel = "
-						+ ctx.channel(), ex);
-			}
-		}
+					log.info("[" + serverId + "][VAN전문 코덱] encode : 응답\n\tchannel = " + ctx
+							.channel() + "\n\tencoded = ["+ in.readableBytes()+ "][" + in.toString(encodingCharset)+ "]");
 
-		if (log.isTraceEnabled()) {
-			log.trace("[" + serverId + "][PSAM 전문 코덱] decode : 완료\n\tchannel = " + ctx.channel());
-		}		
+
+					//전문길이와 전문이 일치하면
+					if (length  <= in.writerIndex()) {  //default 1024 이상이면 추가 셋팅 필요 ISJUNG
+						
+						//단말기ID 부터 EXT 이전 길이만큼 버퍼 생성
+						ByteBuf frame2 = in.readSlice(length);
+
+						byte[] message = new byte[length - 1];
+						frame2.readBytes(message);
+						
+						//isjung 20211019----
+						//log.info("[" + serverId + "][VAN 전문 코덱] decode : 성공\n\tchannel = " + ctx.channel() + "\n\tKocessResponse = " + new String(message,encodingCharset));
+						//-----------
+						
+						PSAMResponse response = PSAMResponse.fromMessage(message,encodingCharset);
+						//if (log.isDebugEnabled()) {
+							
+						log.info("[" + serverId + "][PSAM 전문 코덱] decode : 성공\n\tchannel = " + ctx.channel() + "\n\tPSAMResponse = " + response.getAttributes().toString());
+						//}
+
+						log.info("channel = [" + ctx.channel()+"]"
+								+ "\n\t PSAM 수신 = " + response.toString());
+
+						out.add(response);
+						
+						frame2.clear();  //메모리 삭제 
+						Arrays.fill(message, (byte)0); //메모리 삭제 
+					}
+
+				}//while
+
+
+			} catch (Exception ex) {
+				if (log.isErrorEnabled()) {
+					log.error("[" + serverId + "][VAN 전문 코덱] decode : <오류> " + ex.getMessage() + "\n\tchannel = "
+							+ ctx.channel(), ex);
+				}
+			}
+
+			if (log.isTraceEnabled()) {
+				log.trace("[" + serverId + "][VAN 전문 코덱] decode : 완료\n\tchannel = " + ctx.channel());
+			}
+			
+			in.clear();  //요청 버퍼 메모리 삭제 
 	}
 		
 	

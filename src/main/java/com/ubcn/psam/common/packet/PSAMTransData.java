@@ -52,6 +52,16 @@ public class PSAMTransData extends AbstractPersistentModel {
 	public static final String tran_date ="tran_date";
 	public static final String tran_time ="tran_time";
 	
+	public static final String pSamServNum = "psam_servnum";
+	
+	public String getPSamServNum() {
+		return (String) getAttribute("pSamServNum");
+	}
+	public void setPSamServNum(String pSamServNum) {
+		setAttribute("pSamServNum", pSamServNum);
+	}
+	
+	
 	public String getAuthNumKey() {
 		return (String) getAttribute("auth_num_key");
 	}

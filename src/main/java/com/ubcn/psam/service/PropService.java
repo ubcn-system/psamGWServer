@@ -18,6 +18,9 @@ public class PropService {
 	public String serverId;
 	
 	@Value("${spring.PSAM.server.NUM}")
+	public String psamServNum;
+	
+	@Value("${spring.PSAM.NUM}")
 	public String psamNum;
 
 	public String serverNum;
@@ -42,15 +45,19 @@ public class PropService {
 	public void setServerId(String serverId) {
 		this.serverId = serverId;
 	}
+	public String getPsamServNum() {
+		return psamServNum;
+	}
+	public void setPsamServNum(String psamServNum) {
+		this.psamServNum = psamServNum;
+	}
+	
 	public String getPsamNum() {
 		return psamNum;
 	}
 	public void setPsamNum(String psamNum) {
 		this.psamNum = psamNum;
 	}
-	
-	
-	
 	
 
 }

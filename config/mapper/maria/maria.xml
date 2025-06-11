@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ubcn.psam.mapper.maria.MariaMapper">
 	
 	<select id="selectPSAMserv" resultType="com.ubcn.psam.model.PSamServer" parameterType="map">
 		<![CDATA[
 		select SERV_IP,SERV_PORT,ADM_PORT,TOTL_SAM,BUSY_SAM,IDLE_SAM,BAD_SAM from TB_PSAM_SERVER where 
 			serv_num=#{servnum}		
+		]]>
+	</select>
+	
+	<select id="selectPSAMservList" resultType="com.ubcn.psam.model.PSamServer">
+		<![CDATA[
+		select SERV_NUM,SERV_IP,SERV_PORT,ADM_PORT,TOTL_SAM,BUSY_SAM,IDLE_SAM,BAD_SAM from TB_PSAM_SERVER 
+			ORDER BY SERV_NUM ASC
 		]]>
 	</select>
 	
@@ -47,7 +54,14 @@
 	]]>
 	</update>
 	
-	
+	<update id="update_PSAM_SERVER" parameterType="map">
+	<![CDATA[
+	update TB_PSAM_SERVER set TOTL_SAM = #{totl_sam},
+				BUSY_SAM = #{busy_sam},				
+				IDLE_SAM = #{idle_sam},
+				BAD_SAM = #{bad_sam} , MOD_DATE=SYSDATE() WHERE SERV_NUM=#{serv_num}
+	]]>
+	</update>
 	
 	
 </mapper>
