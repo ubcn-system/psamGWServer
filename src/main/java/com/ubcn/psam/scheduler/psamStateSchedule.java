@@ -80,21 +80,23 @@ public class psamStateSchedule {
 			 pSamInfo = pList.get(i);
 			 
 			 log.info("포트:{}/{}",pSamInfo.getSERV_NUM(),pSamInfo.getADM_PORT());
-			 
-			 checkServer(pSamInfo.getSERV_NUM(), pSamInfo.getSERV_IP(), pSamInfo.getSERV_PORT());
-				 
 			 try {
-				Thread.sleep(5000);
+				 checkServer(pSamInfo.getSERV_NUM(), pSamInfo.getSERV_IP(), pSamInfo.getADM_PORT());
+				 Thread.sleep(5000);
+			 	
 			 }catch (InterruptedException e) {
 			 	// TODO Auto-generated catch block
-				e.printStackTrace();
-				log.error(StringUtils.getPrintStackTrace(e));
+				//e.printStackTrace();				 
+				log.error("서버체크중단:"+StringUtils.getPrintStackTrace(e));
+			 }catch (Exception ex) {
+				 
+				 log.error(StringUtils.getPrintStackTrace(ex));
 			 }
 		 }//
 		 log.info("{} PAM 서버 체크 마침-----------",DateUtils2.getTodayTime());
 	}
 	
-	private void checkServer(int serverNo, String serverIP, int serverPort) {
+	private void checkServer(int serverNo, String serverIP, int serverPort) throws Exception {
 		
 	    int rtnCode = 0;
 		PSAMRequest pSAMrequest = new PSAMRequest();
@@ -121,7 +123,7 @@ public class psamStateSchedule {
 		
 		log.info("PSAM 서버 접속");
 
-		try {
+		//try {
 			 new Bootstrap()
 					.group(workerGroup)
 					.channel(NioSocketChannel.class)
@@ -200,7 +202,7 @@ public class psamStateSchedule {
 															if (log.isErrorEnabled()) {
 																log.error((new StringBuilder()).append("[")
 																		.append(stateTerminalid)
-																		.append("][PSAM 핸들러]] <오류> 호스트 세센 예외발생 - ")
+																		.append("][PSAM 핸들러]] <오류> 호스트 세센 예외발생 ----- ")
 																		.append(cause.getMessage()).toString());
 															}//
 															
@@ -239,14 +241,15 @@ public class psamStateSchedule {
 										log.info("접속 성공");
 										return;
 									}
-									// TODO: 접속 오류 처리
 									log.info("Call checkServer_connect_addListener_operationComplete() : 실패");
+									// TODO: 접속 오류 처리
+									processTcpResponse(pSAMTranData, null);									
 								}
 							}
 							).sync();
-		}catch(InterruptedException ex) {			   
-			log.error(StringUtils.getPrintStackTrace(ex));
-		}
+//		}catch(InterruptedException ex) {			   
+//			log.error(StringUtils.getPrintStackTrace(ex));
+//		}
 	}
 	
 	private void processTcpResponse(PSAMTransData pSAMTranData, PSAMResponse pSAMResponse)  {

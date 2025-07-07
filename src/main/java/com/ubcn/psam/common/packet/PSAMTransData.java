@@ -273,6 +273,7 @@ public class PSAMTransData extends AbstractPersistentModel {
 		setTranDate(DateUtils2.getToday());
 		setTranTime(DateUtils2.getNowTime());
 		
+		setServerId(serv_name);
 		setServName(serv_name);
 		setTermId(request.getTermId());
 		setTransType(request.getTransType());

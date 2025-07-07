@@ -1,6 +1,7 @@
 package com.ubcn.psam.handler;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.ubcn.psam.codec.PSAMServMessageCodec;
 import com.ubcn.psam.common.PSAMConstants;
@@ -51,6 +52,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 			super.channelRead(ctx, msg);
 			return;
 		}//
+		int serverPort=0;
 		
 		request = (PSAMRequest) msg;
 		int retCode = 0;
@@ -87,15 +89,27 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		clientChannel.attr(PSAMTrans).set(transData);  //수신 데이타 저장
 		
 		int serverNum = 0;
-		if("01".equals(request.getMessageType()) || "02".equals(request.getMessageType()) ) {  //01 : 인증코드키 요청, 02 :  카드번호키 요청
+		//if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(request.getMessageType()) || PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(request.getMessageType()) ) {  //01 : 인증코드키 요청, 02 :  카드번호키 요청
+		if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(request.getMessageType()) ) {  //01 : 인증코드키 요청, 02 :  카드번호키 요청
 			//SAM 서버 찾기 
 			serverNum = this.rtnServerNum(propService.getServerNum(), propService.getPsamServNum())+1;  // 0~ propService.getPsamNum() 까지의 숫자 랜덤
 		}else {
 			serverNum =  Integer.parseInt(request.getSamServNum());  //요청 서버 번호
-			transData.setSamNum(propService.getPsamNum());  // Default PSAM 번호
-		}
-		
+			//transData.setSamNum(propService.getPsamNum());  // Default PSAM 번호			
+			transData.setSamNum(request.getSamNum());  // PSAM 번호
+			transData.setPSamServNum(request.getSamServNum());
+		}		
 		PSamServer psamServ = dbService.select_PSAM_server(serverNum);
+		
+		
+		
+		
+		//PSAM 서버 셋팅
+		if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(request.getMessageType()) || PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(request.getMessageType()) ) {  //01 : 인증코드키 요청, 02 :  카드번호키 요청
+			serverPort = psamServ.getSERV_PORT();
+		}else {
+			serverPort = psamServ.getADM_PORT(); 
+		}//
 		
 		log.info("serverNum:{}:{}:{}",serverNum,psamServ.getSERV_IP(),psamServ.getBAD_SAM());
 		
@@ -103,8 +117,6 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		transData.setIdleSam(Integer.toString(psamServ.getIDLE_SAM()));
 		transData.setBusySam(Integer.toString(psamServ.getBUSY_SAM()));
 		transData.setBadSam(Integer.toString(psamServ.getBAD_SAM())); 
-				
-		
 		
 		//1. 요청 정보 저장 
 		transData.setReplyCode("9999");
@@ -124,7 +136,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 //		response = new PSAMResponse(transData);		
 //		ctx.writeAndFlush(response);
 		
-		sendTcpRequest(clientChannel, transData,psamServ.getSERV_IP(),psamServ.getSERV_PORT());
+		sendTcpRequest(clientChannel, transData,psamServ.getSERV_IP(),serverPort);
 		
 		return;		
 	}//
@@ -140,6 +152,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		int i =0;
 		int serverNum = Integer.valueOf(psamServNum);		
 		int rtnServerNum= StringUtils.RandNum(serverNum);
+		
 		log.info("이전서버번호:{}",preSerevrNum);
 		if(preSerevrNum==null || "".equals(preSerevrNum)) {			
 			propService.setServerNum(String.valueOf(rtnServerNum));			
@@ -157,6 +170,39 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		}//
 		
 		log.info("서버번호:{}",rtnServerNum);
+		
+		List<PSamServer> pList = dbService.selectPSAMservList();
+		PSamServer pSamInfo=null;
+		boolean chk=true;
+		int chkCnt=0;
+		while(chk==true) {
+			if(chkCnt==serverNum) {
+				//rtnServerNum=0;
+				log.error("정상인 SAM서버 없슴!!!!!!!!!!!!!!!!!!");
+				chk=false;
+			}//
+			for(i=0;i<pList.size();i++) {
+				 pSamInfo = pList.get(i);			 
+				 if(pSamInfo.getSERV_NUM() == (rtnServerNum+1)) {
+					//log.info("체크: {},{}",pSamInfo.getSERV_NUM(),rtnServerNum);
+					log.info("체크: {},{}",pSamInfo.getSERV_NUM(),pSamInfo.getTOTL_SAM()); 
+					if(pSamInfo.getTOTL_SAM()==0) {
+						rtnServerNum=rtnServerNum+1;
+						
+						if(rtnServerNum==pList.size()) {
+							rtnServerNum=0;
+						}//
+					}else {
+						chk=false;
+						break;
+					}
+				 }//
+			}
+			chkCnt++;
+		}//	
+		
+		log.info("최종서버번호:{}-----------------",rtnServerNum);
+		
 		return rtnServerNum;		
 	}
 	
@@ -249,6 +295,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 												}//
 												
 												try {
+													transData.setReplyCode(null);
 													processTcpResponse(clientChannel, null, transData);
 													hasResponse = true;
 												}catch(Exception ex) {													
@@ -258,7 +305,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 																.append("][PSAM 핸들러]]   <오류 >  실패응답 예외발생1  ")
 																.append(cause.getMessage()).toString());
 													
-													}//													
+													}//
 												}finally {
 													ctx.close();
 												}												
@@ -292,21 +339,56 @@ public class psamAuthHandler extends psamHandlerAdapter {
 			throws Exception {
 		int rtnCode = 0;
 		
-		 PSAMResponse rtnPSAMResponse = null;
-		
+		//log.info("여기에 오나요??");
+		//log.info(transData.getReplyCode());
 		// 응답 처리
 		if ((pSAMResponse == null) && (transData.getReplyCode() == null)) {
 			transData.setReplyCode("7005");
 			transData.setReplyMessage("잠시 후 재시도 요망");
+			pSAMResponse = new PSAMResponse();
+			pSAMResponse.setMessageType(transData.getMessageType());
 		}else {
 			log.info("단말기응답:{}",pSAMResponse.toString());
+			
+			if(PSAMConstants.MESSAGE_TYPE_AUTH.equals(pSAMResponse.getMessageType())) {  //인즈코드키 요청
+				transData.setVanCode(pSAMResponse.getVanCode());
+				transData.setSamServNum(pSAMResponse.getSamServNum());
+				transData.setSamNum(pSAMResponse.getSamNum());
+				transData.setCsn(pSAMResponse.getCsn());
+				transData.setSecNum(pSAMResponse.getSecNum());
+				transData.setCertiCode(pSAMResponse.getCertiCode());
+				
+			}else if(PSAMConstants.MESSAGE_TYPE_PURCHASE.equals(pSAMResponse.getMessageType())) {  // (코드검증&)카드번호키요청
+				transData.setVanCode(pSAMResponse.getVanCode());
+				transData.setSamServNum(pSAMResponse.getSamServNum());
+				transData.setSamNum(pSAMResponse.getSamNum());
+				transData.setCsn(pSAMResponse.getCsn());
+				transData.setSecNum(pSAMResponse.getSecNum());
+				transData.setCardNumKey(pSAMResponse.getCardNumKey());
+					
+			}else if(PSAMConstants.MESSAGE_TYPE_STATUS.equals(pSAMResponse.getMessageType())) { //멀티SAM 인증서버 상태수집전문
+				transData.setSamServNum(pSAMResponse.getSamServNum());
+				transData.setTotalSam(pSAMResponse.getTotalSam());
+				transData.setIdleSam(pSAMResponse.getIdleSam());
+				transData.setBadSam(pSAMResponse.getBadSam());
+				
+			}else if(PSAMConstants.MESSAGE_TYPE_RESET.equals(pSAMResponse.getMessageType())) { //멀티SAM 인증서버 SAM 리셋전문	
+				transData.setSamServNum(pSAMResponse.getSamServNum());
+				transData.setSamNum(pSAMResponse.getSamNum());				
+			}else {
+				//psamConstants.MESSAGE_TYPE_RESTART.equals(request.getMessageType())) // 멀티SAM 인증서버 리스타트전문
+				transData.setSamServNum(pSAMResponse.getSamServNum());
+			}
 			
 			transData.setReplyCode(pSAMResponse.getReplyCode());
 			transData.setReplyMessage(pSAMResponse.getReplyMessage());
 		}
 		
-		//
-		rtnCode = dbService.update_PSAM_TRANINFO(transData);		
+		if(PSAMConstants.MESSAGE_TYPE_STATUS.equals(pSAMResponse.getMessageType())) {
+			rtnCode = dbService.PSAM_SERVER_UPDATE(transData);
+		}else {
+			rtnCode = dbService.update_PSAM_TRANINFO(transData);
+		}//
 		//log.info(clientChannel.attr(PSAMTrans).get().getTermId());
 		
 		
