@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
@@ -16,6 +15,7 @@ import java.util.TimeZone;
 public class DateUtils {
 
 	public static final String DATETIME_FORMAT = "yyyyMMddHHmmss";
+	public static final String DATETIME_FORMAT_HYPEN = "yyyy-MM-dd HH:mm:ss";
 	public static final String DATE_FORMAT = "yyyyMMdd";
 	public static final String TIME_FORMAT = "HHmmss";
 	public static final SimpleDateFormat format1 = new SimpleDateFormat(DATE_FORMAT);
@@ -57,6 +57,10 @@ public class DateUtils {
 
 	public static String formatSimpleDatetime(Date date) {
 		return format3.format(date);
+	}
+	
+	public static String formatSimpleDatetimeHypen(Date date) {
+		return format(DATETIME_FORMAT_HYPEN, date);
 	}
 
 	/**
@@ -407,6 +411,31 @@ public class DateUtils {
 	                             + Character.digit(s.charAt(i+1), 16));
 	    }
 	    return data;
+	}
+    
+    /**
+	   * 
+	   * @param code  "h" - hypen
+	   * @param type  "t" - time format
+	   * @return
+	   */
+	 public static String nowDate(String code,String type) {
+	    Date date = new Date();
+	    String nowDate = "";
+	    if("h".equals(code)) {
+	       if("t".equals(type)) {	
+	    	   nowDate = formatSimpleDatetimeHypen(date);
+	       }else {
+	    	   nowDate = formatSimpleDatetime(date);
+	       }//
+	    }else {
+	       if("t".equals(type)) {
+	    	   nowDate = formatSimpleDatetime(date);
+	       }else {
+	    	   nowDate = formatSimpleDate(date);   
+	       }//
+	    }		
+		return nowDate;
 	}
     
     

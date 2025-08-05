@@ -27,10 +27,10 @@
 	  insert into TB_PSAM_TRANINFO
 	    (UNIQUENO,TRAN_DATE,TERMINAL_ID,SERV_NAME,TRAN_TIME,
 		TRAN_TYPE,MSG_TYPE,INPUT_TYPE,TRAN_NUM,RES_CODE,
-		VAN_CODE) VALUES
+		VAN_CODE,REG_DATE) VALUES
 		(#{uniqueno},#{tran_date},#{terminal_id},#{serv_name},#{tran_time},
 		#{tran_type},#{msg_type},#{input_type},#{tran_num},	#{res_code},
-		#{van_code})
+		#{van_code},date_add(SYSDATE(),interval+9 hour))
 	]]>	
 	</insert>
 	
@@ -50,7 +50,7 @@
 				CARD_KEY = #{card_key},
 				RES_CODE  = #{res_code},
 				RES_MSG = #{res_msg},
-				MOD_DATE = now() WHERE uniqueno=#{uniqueno}
+				MOD_DATE = date_add(now(),interval+9 hour) WHERE uniqueno=#{uniqueno}
 	]]>
 	</update>
 	
@@ -59,7 +59,7 @@
 	update TB_PSAM_SERVER set TOTL_SAM = #{totl_sam},
 				BUSY_SAM = #{busy_sam},				
 				IDLE_SAM = #{idle_sam},
-				BAD_SAM = #{bad_sam} , MOD_DATE=SYSDATE() WHERE SERV_NUM=#{serv_num}
+				BAD_SAM = #{bad_sam} , MOD_DATE=date_add(SYSDATE(),interval+9 hour) WHERE SERV_NUM=#{serv_num}
 	]]>
 	</update>
 	
