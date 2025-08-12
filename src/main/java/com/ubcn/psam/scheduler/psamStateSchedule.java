@@ -1,9 +1,7 @@
 package com.ubcn.psam.scheduler;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +14,7 @@ import com.ubcn.psam.common.packet.PSAMRequest;
 import com.ubcn.psam.common.packet.PSAMResponse;
 import com.ubcn.psam.common.packet.PSAMTransData;
 import com.ubcn.psam.common.util.DateUtils2;
+import com.ubcn.psam.common.util.KakaoUtil;
 import com.ubcn.psam.common.util.StringUtils;
 import com.ubcn.psam.model.PSamServer;
 import com.ubcn.psam.service.DBService;
@@ -45,6 +44,9 @@ public class psamStateSchedule {
 
 	@Autowired
 	private DBService dbService;
+	
+	@Autowired
+	private KakaoUtil kakaoUtil;
 	
 	@Value("${spring.netty.threads.worker:0}")
 	private int workerCount;
@@ -76,12 +78,12 @@ public class psamStateSchedule {
 		 
 		 int i =0;
 		 for(i=0;i<pList.size();i++) {
-		 //for(i=0;i<1;i++) {
-			 pSamInfo = pList.get(i);
+		 	 pSamInfo = pList.get(i);
 			 
 			 log.info("포트:{}/{}",pSamInfo.getSERV_NUM(),pSamInfo.getADM_PORT());
 			 try {
 				 checkServer(pSamInfo.getSERV_NUM(), pSamInfo.getSERV_IP(), pSamInfo.getADM_PORT());
+				 
 				 Thread.sleep(5000);
 			 	
 			 }catch (InterruptedException e) {
@@ -256,6 +258,8 @@ public class psamStateSchedule {
 		int rtnCode = 0;
 		try {
 			if(pSAMResponse== null) {
+				log.info("서버:{}",pSAMTranData.getPSamServNum());
+				
 				pSAMTranData.setSamNum("0");
 				pSAMTranData.setTotalSam("0");
 				pSAMTranData.setBusySam("0");  //이건 없는데..
@@ -263,6 +267,10 @@ public class psamStateSchedule {
 				pSAMTranData.setBadSam("0");
 				pSAMTranData.setReplyCode("7005");
 				pSAMTranData.setReplyMessage("SAM 서버응답 오류");
+				
+				PSamServer pSamServer = dbService.select_PSAM_server(Integer.parseInt(pSAMTranData.getPSamServNum()));
+				kakaoUtil.SendKakao(String.format("서버:%s 통신 오류", pSamServer.getSERV_IP()));
+				
 			}else {
 				
 				pSAMTranData.setSamNum("0");
@@ -275,10 +283,8 @@ public class psamStateSchedule {
 			
 			}
 			
+			//PSAM 서버 정보 업데이트
 			rtnCode = dbService.PSAM_SERVER_UPDATE(pSAMTranData);
-			
-			//PSAM 서버 정보 업데이트 
-			
 			
 			if(rtnCode==0) {
 				log.error("PSAM 상태 정보 저장 오류");

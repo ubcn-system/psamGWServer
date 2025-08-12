@@ -1,11 +1,10 @@
 <configuration>
     <!-- 변수 지정 -->
-    <!--  
     <property name="LOG_DIR" value="/home/vmms/log" />
-    -->
-     
-    <property name="LOG_DIR" value="D:/log" />
     
+    <!--  
+    <property name="LOG_DIR" value="D:/log" />
+    -->
     <property name="LOG_PATH_NAME" value="${LOG_DIR}/psamGWS.log" />
 
     <!-- FILE Appender -->
@@ -28,7 +27,7 @@
   </appender>
 
   <logger name="jdbc" level="OFF"/>
-  <logger name="jdbc.sqlonly" level="OFF"/>
+  <logger name="jdbc.sqlonly" level="ERROR"/>
   <logger name="jdbc.sqltiming" level="OFF"/>
   <logger name="jdbc.audit" level="OFF"/>
   <logger name="jdbc.resultset" level="OFF"/>
