@@ -345,6 +345,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 		if ((pSAMResponse == null) && (transData.getReplyCode() == null)) {
 			transData.setReplyCode("7005");
 			transData.setReplyMessage("잠시 후 재시도 요망");
+			transData.setSamNum("0");
 			pSAMResponse = new PSAMResponse();
 			pSAMResponse.setMessageType(transData.getMessageType());
 		}else {
@@ -371,6 +372,7 @@ public class psamAuthHandler extends psamHandlerAdapter {
 				transData.setTotalSam(pSAMResponse.getTotalSam());
 				transData.setIdleSam(pSAMResponse.getIdleSam());
 				transData.setBadSam(pSAMResponse.getBadSam());
+				transData.setSamNum("0");
 				
 			}else if(PSAMConstants.MESSAGE_TYPE_RESET.equals(pSAMResponse.getMessageType())) { //멀티SAM 인증서버 SAM 리셋전문	
 				transData.setSamServNum(pSAMResponse.getSamServNum());
